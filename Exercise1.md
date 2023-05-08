@@ -1,0 +1,44 @@
+Exercise 1
+================
+
+## **Answer 1: Google Studies - Finding the optimal number of interviews for hiring**
+
+\|***\|Data from past hiring decisions\|Data Analysis\|Optimal no.of
+interviews\|
+\|NR\|***\_\_\_\_\_\_\_\_\_O<sub>1</sub>\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\|\_\_\_\_\_\_\_\_\_\_\_\_\_\|\_\_\_\_\_\_\_\_\_\_\_4\_\_\_\_\_\_\_\_\_\_\_\|
+
+The candidates were not randomly assigned (NR) and the data of dozens of
+Google’s hiring decision was analyzed (O<sub>1</sub>). After processing
+this data the number of Interviews required after the study were 4.
+There is no Treatment or Control, only one observation and then data
+analysis to get the optimal number of interviews.
+
+**Potential threats to inference**: 1. Selection bias: if certain types
+of candidates were more likely to be assigned to the experimental group
+(e.g. those who had already performed well in previous interviews), the
+results may not be generalizable to the wider candidate pool. 2. Small
+sample size: if the sample size was too small, the results may not be
+statistically significant and could be due to chance.
+
+**Ways to address these threats** 1. Randomization: random assignment of
+candidates to different interview numbers can help ensure that there is
+no selection bias. 2. Increase sample size: by increasing the sample
+size, the study can be powered to detect a statistically significant
+difference between the groups, and reduce the risk of results due to
+chance.
+
+## **Answer 2: A lost wallet experiment**
+
+The following steps were taken to improve research design:
+
+1.  All the wallets were identical with similar contents inside and fake
+    ID without a picture to remove the threat of confounding variables
+
+2.  Placed wallets in all kind of places such as High/Low income zip
+    codes, small/big cities, men/women bathrooms to get a proper
+    representation of the population in order to remove the sampling
+    bias.
+
+3.  Interviewed the people on call to take a further representation of
+    the sample such as religious/not religious/attended church/college
+    to get further information on the samples.
