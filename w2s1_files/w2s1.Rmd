@@ -1,0 +1,36 @@
+---
+title: "Week 2, Session 1"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+```
+
+## The Motivation Tactics Puzzle
+
+Let's first load the data for the puzzle:
+
+```{r load-data}
+
+data_path <- "/Users/ankur/2023_People_Analytics/"
+performance_data <- read_csv(paste0(data_path,"performance_data.csv"))
+
+performance_data
+```
+
+### Analyze the data
+
+1. Plot the distribution of performance of worker 1.
+
+```{r}
+summary(performance_data)
+
+library(ggplot2)
+
+ggplot(data = performance_data) +
+  geom_histogram(aes(x= worker1)) 
+```
+
