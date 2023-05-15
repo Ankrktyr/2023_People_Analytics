@@ -131,7 +131,7 @@ gc()
 
     ##            used  (Mb) gc trigger  (Mb) limit (Mb) max used  (Mb)
     ## Ncells  4477732 239.2    8234891 439.8         NA  4895601 261.5
-    ## Vcells 49462872 377.4   95366537 727.6      16384 79778520 608.7
+    ## Vcells 49462880 377.4   95366547 727.6      16384 79778528 608.7
 
 ## Guess the examiner’s race
 
@@ -257,8 +257,8 @@ gc()
 ```
 
     ##            used  (Mb) gc trigger  (Mb) limit (Mb) max used  (Mb)
-    ## Ncells  4658651 248.8    8234891 439.8         NA  7358673 393.0
-    ## Vcells 51796842 395.2   95366537 727.6      16384 94095417 717.9
+    ## Ncells  4658651 248.8    8234891 439.8         NA  7358672 393.0
+    ## Vcells 51796850 395.2   95366547 727.6      16384 94095419 717.9
 
 ## Examiner’s tenure
 
@@ -346,7 +346,7 @@ gc()
 
     ##            used  (Mb) gc trigger  (Mb) limit (Mb)  max used  (Mb)
     ## Ncells  4666800 249.3    8234891 439.8         NA   8234891 439.8
-    ## Vcells 57871117 441.6  114519844 873.8      16384 114303963 872.1
+    ## Vcells 57871125 441.6  114519856 873.8      16384 114303971 872.1
 
 \##Overall Distribution of Gender
 
