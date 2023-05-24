@@ -1,0 +1,176 @@
+---
+title: "Untitled"
+output: github_document
+---
+library(arrow)
+## Open data file
+```{r open data}
+applications <- read_feather("/Users/ankur/2023_People_Analytics/app_data_starter.feather")
+
+```
+
+## Look at examiners demographics
+
+```{r count-examiners}
+library(dplyr)
+
+applications %>%
+  distinct(examiner_id) %>%
+  count()
+```
+### Overall distribution of Gender
+
+```{r gender overall}
+
+library(dplyr)
+library(ggplot2)
+
+applications %>%
+  group_by(gender) %>%
+  #filter(!is.na(gender)) %>%
+  summarise(n = n_distinct(examiner_id)) %>%
+  ggplot(aes(x = as.factor(gender), y = n, fill = gender)) +
+  geom_col() +
+  ggtitle("Gender Distribution overall") + 
+  ylab("Examiners") +
+  xlab("")
+
+
+```
+### Finding: Number of males is higer than the females ( more than double). Consdering gender NA could be male or ffemale the ratio could be more balnced or unbalanced depending on the actual gender of NA. It maybe unavailable due to foreign names which are not present in the wru package.
+
+### Overall distribution of Race
+
+```{r race overall}
+library(dplyr)
+library(ggplot2)
+
+applications %>%
+  group_by(race) %>%
+  #filter(!is.na(race)) %>%
+  summarise(n = n_distinct(examiner_id)) %>%
+  ggplot(aes(x = as.factor(race), y = n, fill = race)) +
+  geom_col() +
+  ggtitle("Race Distribution overall") + 
+  ylab("Examiners") +
+  xlab("")
+
+```
+### Finding: White race has the highest representation foolowed by Asian. Balck and Hispanic are almost equal and are the minorities. Also, there might be a chance that people predicted white could be wrong as other races could have White names as well.
+
+### Overall Distribution of Tenure Days
+
+```{r tenure overall}
+applications %>%
+  group_by(tenure_days) %>%
+  #filter(!is.na(tenure_days)) %>%
+  summarise(n = n_distinct(examiner_id)) %>%
+  ggplot(aes(x = tenure_days)) + 
+  geom_histogram(binwidth = 365) +
+  ggtitle("Overall Tenure distribution") +
+  xlab("Tenure (years)") +
+  scale_x_continuous(labels = function(x) x / 365, breaks = seq(0, max(applications$tenure_days, na.rm = TRUE), by = 365))+
+  ylab("Frequency")+
+  theme_minimal()+
+  labs(fill = "")
+
+
+```
+### Finding: The number of people with tenure from 13-17 is around the same, with the number gradually increasing after 8 years(which has the people with least tenure)
+
+### Compare TCs by gender graphically
+```{r compare gender tcs}
+
+library(dplyr)
+library(ggplot2)
+
+applications %>%
+  group_by(tc, gender) %>%
+  #filter(!is.na(gender)) %>%
+  summarise(n = n_distinct(examiner_id)) %>%
+  ggplot(aes(x = as.factor(tc), y = n, fill = gender)) +
+  geom_col(position = "dodge") +
+  ggtitle("Gender Distribution by TCs") + 
+  ylab("Examiners") +
+  xlab("TCs")
+
+
+```
+### Finding: TC 1600 has a good ration of males and females, while TC 2100 has the worst ratio.
+
+## Compare TCs by Race distribution 
+
+```{r compare race tcs}
+
+library(dplyr)
+library(ggplot2)
+
+applications %>%
+  group_by(tc, race) %>%
+  #filter(!is.na(race)) %>%
+  summarise(n = n_distinct(examiner_id)) %>%
+  ggplot(aes(x = as.factor(tc), y = n, fill = race)) +
+  geom_col(position = "dodge") +
+  ggtitle("Race Distribution by TCs") + 
+  ylab("Examiners") +
+  xlab("TCs")
+
+```
+
+### Findings: As white population is the highest it has the most number of people in the TCs and almost all TCs have equal representation ratio of each race.
+
+## Compare TCs by Tenure
+```{r compare tenure tcs}
+
+applications %>%
+  group_by(tc, tenure_days) %>%
+  #filter(!is.na(tenure_days)) %>%
+  summarise(n = n_distinct(examiner_id)) %>%
+ggplot(aes(fill = as.factor(tc), x = tenure_days)) + 
+  geom_histogram(binwidth = 365) +
+  ggtitle("Tenure distribution across technology centres") +
+  xlab("Tenure (years)") +
+  scale_x_continuous(labels = function(x) x / 365, breaks = seq(0, max(applications$tenure_days, na.rm = TRUE), by = 365))+
+  ylab("Examiners")+
+  theme_minimal()+
+  labs(fill = "Technology Centre")
+
+```
+## Finding: The tenure distribution across the dataset reveals an intriguing pattern. The majority of individuals exhibit a pronounced spike in tenure, particularly those who have been with the organization for 16 years or longer. However, this trend does not hold true for Technology Centre 2400, where the distribution of tenures appears to be more evenly spread across the range.
+
+### Compare WGs by gender graphically
+```{r compare gender WGs}
+
+library(dplyr)
+library(ggplot2)
+
+applications %>%
+  group_by(examiner_art_unit, gender) %>%
+  #filter(!is.na(gender)) %>%
+  summarise(n = n_distinct(examiner_id)) %>%
+  ggplot(aes(x = examiner_art_unit, y = n, fill = gender)) +
+  geom_col(position = "dodge") +
+  ggtitle("Gender Distribution by WGs") + 
+  ylab("Examiners") +
+  xlab("WGs")
+
+```
+## Compare WGs by Race distribution 
+
+```{r compare race WGs}
+
+library(dplyr)
+library(ggplot2)
+
+applications %>%
+  group_by(examiner_art_unit, race) %>%
+  #filter(!is.na(race)) %>%
+  summarise(n = n_distinct(examiner_id)) %>%
+  ggplot(aes(x = examiner_art_unit, y = n, fill = race)) +
+  geom_col(position = "dodge") +
+  ggtitle("Race Distribution by WGs") + 
+  ylab("Examiners") +
+  xlab("WGs")
+
+```
+
