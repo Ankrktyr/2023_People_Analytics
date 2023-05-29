@@ -1,0 +1,166 @@
+---
+title: "Exercise 4"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(arrow)
+library(ggplot2)
+library(broom)
+applications <- read_feather("/Users/ankur/2023_People_Analytics/app_data_starter_Exercise3.feather")
+```
+
+```{r creating-wgs-year-filtering, echo=FALSE, message=FALSE}
+applications <- applications %>%
+  mutate(wg = (floor(examiner_art_unit / 10) * 10)) %>%
+  mutate(year = year(appl_status_date)) %>%
+  filter(year <= 2017) %>%
+  drop_na(examiner_id)
+```
+
+```{r creating examiners set, echo=FALSE, message=FALSE}
+examiners <- applications %>%
+  distinct(examiner_id, .keep_all = TRUE) %>%
+  group_by(examiner_id, examiner_art_unit, year) %>%
+  summarise( 
+    gender = first(gender),
+    race = first(race),
+    tc = first(tc),
+    wg = first(wg)
+    )
+```
+
+### Selecting TC 
+
+```{r selecting 1700}
+tc1700 <- examiners %>%
+  filter(tc == 1700) %>%
+  drop_na(gender)
+```
+
+### Visualizing
+
+I selected Technology Centre 1700 to analyze. I chose to remove examiners with 'NA' in gender, which resulted in 125 examiner's records being removed (out of a total 1479 - approximately 8.5%). 
+
+
+One possible approach to address the absence of data would be to randomly populate it using proportions similar to the existing distribution of identified males and females. However, it is challenging to determine whether this approach would yield reasonably accurate results or provide meaningful insights.
+
+To capture the changes in distributions and proportions over time, I incorporated the years as part of the pre-processed data. This allows for an analysis that takes into account the temporal aspect and provides a more comprehensive understanding of how the variables evolve over different time periods.
+
+```{r plotting tc, echo = FALSE, message=FALSE}
+tc1700 %>%
+  group_by(year, gender) %>%
+  summarise(n = n_distinct(examiner_id)) %>%
+  ggplot(aes(x = year, y = n, fill = gender)) +
+  geom_col(position = "fill") +
+  ylab("Gender proportion")+
+  xlab("Year")+
+  ggtitle("Gender Distribution across TC1700 by year")+
+  labs(fill = "Gender")+
+  scale_fill_manual(values = c("female" = "pink", "male" = "blue"))+
+  theme_minimal()
+```
+
+```{r plotting wg, fig.width=8, fig.height=10, echo=FALSE, message=FALSE}
+tc1700 %>%
+  filter(wg <1750) %>%
+  group_by(year, gender, wg) %>%
+  summarise(n = n_distinct(examiner_id)) %>%
+  ggplot(aes(fill = gender, x = year, y = n)) + 
+  geom_col(position = "fill") +
+  facet_wrap(~ wg, nrow = 2)+
+  ggtitle("Gender Distribution across Workgroups") +
+  xlab("Year") +
+  ylab("Gender proportion")+
+  labs(fill = "Gender")+
+  scale_fill_manual(values = c("female" = "pink", "male" = "blue"))+
+  theme_minimal()
+
+tc1700 %>%
+  filter(wg >= 1750) %>%
+  group_by(year, gender, wg) %>%
+  summarise(n = n_distinct(examiner_id)) %>%
+  ggplot(aes(fill = gender, x = year, y = n)) + 
+  geom_col(position = "fill") +
+  facet_wrap(~ wg, nrow = 2)+
+  xlab("Year") +
+  ylab("Gender proportion")+
+  labs(fill = "Gender")+
+  scale_fill_manual(values = c("female" = "pink", "male" = "blue"))+
+  theme_minimal()
+```
+
+```{r plotting au, echo=FALSE, message=FALSE}
+average_counts <- tc1700 %>%
+  group_by(examiner_art_unit, year, gender) %>%
+  summarize(count = n()) %>%
+  group_by(examiner_art_unit, gender) %>%
+  summarize(average_count = mean(count)) %>%
+  ungroup()
+
+# Plot the gender proportions
+ggplot(average_counts, aes(x = examiner_art_unit, y = average_count, fill = gender)) +
+  geom_bar(stat = "identity", position = "fill") +
+  labs(x = "Examiner Art Unit", y = "Average Proportion", fill = "Gender") +
+  ggtitle("Gender Proportions by Examiner Art Unit (based on average for the year)") +
+  scale_fill_manual(values = c("female" = "pink", "male" = "blue"))+
+  theme_minimal()
+
+ggplot(average_counts, aes(x = examiner_art_unit, y = average_count, fill = gender)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(x = "Examiner Art Unit", y = "Average Count", fill = "Gender") +
+  ggtitle("Gender Distributions by Examiner Art Unit (based on average for the year)") +
+  scale_fill_manual(values = c("female" = "pink", "male" = "blue"))+
+  theme_minimal()
+```
+### Depicting perceptions of gender composition
+
+```{r gender-perceptions, echo=FALSE, message=FALSE}
+
+perception <- tc1700 %>%
+  group_by(examiner_art_unit, year) %>%
+  mutate(peer_count = if_else(gender == "male", sum(gender=="male")-1, sum(gender=="female")-1)) %>%
+  mutate(total_peers = if_else(gender == "male", sum(gender=="female")+peer_count, sum(gender=="male")+peer_count)) %>%
+  mutate(samegender_proportion = if_else(total_peers == 0 | peer_count == 0, NA_real_, peer_count / total_peers))
+
+
+sample_values <- sample(unique(perception$examiner_art_unit), 4)
+
+perception_sample <- perception[perception$examiner_art_unit %in% sample_values,]
+
+# Plot the samegender_proportion over the years for each examiner_art_unit separately
+perception_sample %>%
+  group_by(examiner_art_unit, year, gender) %>%
+  summarise(n = first(samegender_proportion)) %>%
+  ggplot(aes(x = year, y = n, fill = gender)) +
+  geom_col(position="stack") +
+  labs(x = "Year", y = "Same-Gender Proportion", fill = "Gender") +
+  ggtitle("Proportions of Same-Gender Perception over time for a sample of AUs") +
+  scale_y_continuous(limits = c(0, 1.0))+
+  facet_wrap(~ examiner_art_unit, nrow = 2) +
+  scale_fill_manual(values = c("male" = "blue", "female" = "pink"))+
+  theme_minimal()
+
+ggplot(perception_sample, aes(x = year, y = samegender_proportion, color = gender)) +
+  geom_line() +
+  labs(x = "Year", y = "Same-Gender Proportion", color = "Gender") +
+  ggtitle("Change in Same-Gender Perception over time for a sample of AUs") +
+  facet_wrap(~ examiner_art_unit, nrow = 2)+
+  scale_color_manual(values = c("male" = "blue", "female" = "pink"))+
+  theme_minimal()
+```
+
+## Observations on Gender Proportions at Different Levels
+As we analyze the data at various levels, including Technology Centre (TC), Art Unit, and Work Group (WG), we observe notable differences in gender proportions. At the TC level, there is considerable variation, with some TCs having significantly more women or men on average. However, as we zoom in to the WG level and examine the data over time, we notice a tendency for gender proportions to even out.
+
+An exception to this trend is WG 1600, which deviates from the overall pattern. This could be attributed to the fact that WG 1600 has a lower total number of examiners compared to the other seven WGs. Additionally, the data for WG 1600 starts from 2004, suggesting that it may be a relatively new workgroup that has not yet reached the maturity levels of others.
+
+At the art unit level, it is challenging to identify a clear trend. However, in general, if the gender proportion in one year decreases, there is a tendency for it to increase in the following year. This pattern could indicate intentional hiring decisions aimed at achieving gender balance within teams, although accurately measuring the impact is difficult.
+
+Among the examined Technology Centres (TCs), TC 1600 exhibits the most balanced distribution of gender proportions. On the other hand, TC 2100 appears to be predominantly male-dominated, closely followed by TC 2400.
+
+In summary, conscious efforts to equalize gender proportions appear to be more prominent at the TC level. These efforts may trickle down to the WG level and subsequently impact the art units. As long as the gender metrics at the TC level demonstrate equality, some level of variation at the smaller levels can be tolerated
+
