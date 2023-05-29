@@ -1,12 +1,23 @@
 ---
-title: "Untitled"
+title: "Exercise 3"
 output: github_document
 ---
-library(arrow)
+
 ## Open data file
 ```{r open data}
+library(arrow)
+library(tidyverse)
+library(broom)
 applications <- read_feather("/Users/ankur/2023_People_Analytics/app_data_starter.feather")
 
+```
+
+
+```{r testing}
+# Create a vector of labels
+cleaned <- applications %>%
+  distinct(examiner_id, .keep_all = TRUE) %>%
+  select(examiner_id, gender, race, tenure_days, tc, examiner_art_unit)
 ```
 
 ## Look at examiners demographics
@@ -148,8 +159,8 @@ applications %>%
   group_by(examiner_art_unit, gender) %>%
   #filter(!is.na(gender)) %>%
   summarise(n = n_distinct(examiner_id)) %>%
-  ggplot(aes(x = examiner_art_unit, y = n, fill = gender)) +
-  geom_col(position = "dodge") +
+  ggplot(aes(x = as.factor(examiner_art_unit), y = n, fill = gender)) +
+  geom_col() +
   ggtitle("Gender Distribution by WGs") + 
   ylab("Examiners") +
   xlab("WGs")
@@ -173,4 +184,129 @@ applications %>%
   xlab("WGs")
 
 ```
+```{r}
+applications |> tbl_vars()
+```
 
+```{r turnover, echo=FALSE}
+#converting appl_status_date to date
+applications <- applications %>%
+  mutate(appl_status_date = dmy_hms(appl_status_date))
+
+#creating year variable
+applications <- applications %>%
+  mutate(year = year(appl_status_date))
+
+#filtering to prevent incorrect years after 2017
+applications <- applications %>%
+  filter(year <= 2017)
+
+#grouping by examiner_id
+turnover <- applications %>%
+  group_by(examiner_id) %>%
+  summarize(min_year = min(year), max_year = max(year), tc = first(tc), gender = first(gender), race = first(race)) %>%
+  mutate(year_left = if_else(max_year<2017, max_year+1, NA_real_))
+
+#calculating turnover
+turnover_rate2 <- turnover %>%
+  group_by(year_left) %>%
+  summarize(turnover_count = n()) %>%
+  mutate(year = year_left-1)
+
+#calculating total examiners
+total_examiners <- applications %>%
+  group_by(year) %>%
+  summarize(previous_year_count = n_distinct(examiner_id))
+
+#joining turnover and total examiners df's
+turnover_rate2 <- turnover_rate2 %>%
+  left_join(total_examiners) %>%
+  mutate(turnover_rate = turnover_count/previous_year_count*100) %>%
+  select(-year)
+
+#picking 2012 for analysis year
+regression_data <- turnover %>%
+  filter(min_year <= 2012, year_left >= 2013 | is.na(year_left)) %>%
+  mutate(left = if_else(year_left != 2013 | is.na(year_left),0,1)) %>%
+  drop_na(gender)
+
+#descriptive
+regression_data %>%
+  count(gender, left) %>%
+  group_by(gender) %>%
+  mutate(pct = n/sum(n))
+
+#creating holdout sample
+holdout_sample <- regression_data %>%
+  slice_sample(prop = 0.15)
+
+#training set
+training_set <- regression_data %>%
+  anti_join(holdout_sample)
+```
+
+```{r modeling-gender&tc, echo=FALSE}
+#model
+model1 <- lm(data = training_set, left ~ gender + as.factor(tc))
+tidy(model1)
+summary(model1)
+
+#checking prediction
+holdout_predictions <- predict(model1, newdata = holdout_sample)
+
+#comparing
+holdout_actuals <- holdout_sample$left
+comparison_data <- data.frame(actuals = holdout_actuals, predictions = holdout_predictions)
+comparison_data <- comparison_data %>%
+  mutate(predictions = if_else(predictions >= 0.5, 1, 0))
+
+#False negative rate (there are no positive predictions so the FPR is 0)
+confusion_matrix <- table(comparison_data$predictions, comparison_data$actuals)
+fnr <- prop.table(confusion_matrix["0", "1"])
+
+#False negative Rate
+
+fnr
+```
+## Findings
+Due to the dataset's size, we are unable to generate meaningful predictions that carry significant value. Additionally, in the linear model, none of the predictors exhibit statistical significance, and the overall R-squared is exceptionally low. This outcome could be attributed to the unsuitability of linear regression for predicting binary outcomes.
+
+### With race added
+
+```{r including-race, echo=FALSE}
+#model
+model2 <- lm(data = training_set, left ~ gender + as.factor(tc) + race)
+tidy(model2)
+summary(model2)
+
+#checking prediction
+holdout_predictions2 <- predict(model2, newdata = holdout_sample)
+
+#comparing
+holdout_actuals2 <- holdout_sample$left
+comparison_data2 <- data.frame(actuals = holdout_actuals, predictions = holdout_predictions2)
+comparison_data2 <- comparison_data2 %>%
+  mutate(predictions = if_else(predictions >= 0.02, 1, 0))
+
+#False negative rate (there are no positive predictions so the FPR is 0)
+confusion_matrix <- table(comparison_data2$predictions, comparison_data2$actuals)
+fnr2 <- prop.table(confusion_matrix["0", "1"])
+
+fnr2
+
+```
+
+## Findings after adding race
+
+The inclusion of race as a predictor has a minimal impact on enhancing the model's accuracy, but it remains insufficient for reliable predictions on binary outcomes. Theoretically, adjusting the classification thresholds could slightly improve the model's performance. However, determining an appropriate threshold poses challenges and is a complex task.
+
+## Plotting distributions to show turnover
+
+```{r plotting-new}
+ggplot(regression_data, aes(fill = as.factor(left), x = gender)) + 
+  geom_bar() +
+  ggtitle("Gender distribution across technology centres") +
+  xlab("Technology centre") +
+  ylab("Frequency")+
+  theme_minimal()
+```
